@@ -28,8 +28,9 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            Review this pull request. Analyze the code changes, check for bugs,
-            security issues, and suggest improvements. Post your review as a
-            PR review comment.
+            Review this pull request. Analyze the code changes for bugs,
+            security issues, and improvements. Use the GitHub API via
+            the gh CLI to post your review.
+          claude_args: "--allowedTools 'Read,Glob,Grep,Bash(gh *)'"
           additional_permissions: |
             actions: read
