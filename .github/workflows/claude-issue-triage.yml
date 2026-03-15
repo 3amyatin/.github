@@ -10,7 +10,7 @@ jobs:
   claude-issue-triage:
     if: >
       github.event_name == 'issues' &&
-      (github.event.action == 'opened' || github.event.action == 'edited')
+      github.event.action == 'opened'
     runs-on: ubuntu-latest
     permissions:
       contents: read
