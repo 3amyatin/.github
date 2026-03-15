@@ -29,8 +29,11 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             Review this pull request. Analyze the code changes for bugs,
-            security issues, and improvements. Use the GitHub API via
-            the gh CLI to post your review.
-          claude_args: "--allowedTools 'Read,Glob,Grep,Bash(gh *)'"
+            security issues, and improvements.
+            For each issue found, post an inline comment on the specific line
+            using create_inline_comment. Include code suggestions using
+            ```suggestion blocks where appropriate.
+            After all inline comments, post a summary review comment.
+          claude_args: "--allowedTools 'Read,Glob,Grep,Bash(gh *),mcp__github_inline_comment__create_inline_comment,mcp__github_comment__create_or_update_comment'"
           additional_permissions: |
             actions: read
