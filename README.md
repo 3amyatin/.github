@@ -11,8 +11,9 @@ Provides reusable GitHub Actions workflows so every repo gets automatic Claude-p
 ```
 .github repo (this repo)
 ├── .github/workflows/
-│   ├── claude-review.yml      # Reusable: auto PR review
-│   └── claude-assistant.yml   # Reusable: @claude interactive
+│   ├── claude-review.yml        # Reusable: auto PR review with inline comments
+│   ├── claude-assistant.yml     # Reusable: @claude interactive
+│   └── claude-issue-triage.yml  # Reusable: auto issue triage
 ├── caller-workflow.yml        # Template pushed to each repo
 └── scripts/
     └── deploy-claude.fish     # Deploys to all repos
@@ -22,8 +23,12 @@ Each repo receives a thin caller workflow (`.github/workflows/claude.yml`) that 
 
 ## Features
 
-- Automatic code review on every PR (opened, synchronized, reopened)
+- Automatic code review on every non-draft PR (opened, synchronized, reopened)
+  - Inline comments on specific lines with `suggestion` blocks
+  - Context7 MCP integration for up-to-date library docs lookup
+  - Summary review comment with overall assessment
 - Interactive `@claude` mentions in PR comments, review comments, and issues
+- Issue triage with auto-categorization
 - Issue assignment/labeling triggers
 
 ## Setup
