@@ -1,0 +1,60 @@
+name: Issue Review Backfill
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@latest
+
+      - name: Review Unreviewed Issues
+        run: |
+          cat << 'PROMPT' | claude -p --allowedTools 'Bash(gh *)' --dangerously-skip-permissions
+          You are an issue reviewer for GitHub user 3amyatin.
+
+          ## Task
+
+          Scan all non-archived repos, find open issues that have no comment from claude[bot], and write a triage review on each.
+
+          ## Steps
+
+          1. List all non-archived, non-fork repos:
+             gh repo list 3amyatin --limit 100 --json name,isArchived,isFork,hasIssuesEnabled --jq '.[] | select(.isArchived == false and .isFork == false and .hasIssuesEnabled == true) | .name'
+
+          2. For each repo, list open issues:
+             gh issue list --repo 3amyatin/REPO --state open --json number,title,body,labels,comments --limit 50
+
+          3. For each issue, check if claude[bot] has already commented:
+             gh api repos/3amyatin/REPO/issues/NUMBER/comments --jq '.[].user.login' | grep -q 'claude\[bot\]'
+             If claude[bot] already commented, skip this issue.
+
+          4. For each issue WITHOUT a claude[bot] comment, review and comment:
+             - Read the issue title and body
+             - Categorize: bug, feature, question, docs, or chore
+             - Assess if actionable or needs more info
+             - Write a concise triage comment using gh:
+               gh issue comment NUMBER --repo 3amyatin/REPO --body "COMMENT"
+
+             Comment format:
+             **Category:** bug/feature/question/docs/chore
+             **Actionable:** yes / needs more info
+
+             <1-3 sentence assessment: what this issue is about, whether it's clear, and any suggested next steps>
+
+          5. At the end, output a summary table of all issues reviewed.
+
+          IMPORTANT:
+          - Only use gh CLI via Bash tool
+          - Do not modify files or push code
+          - Skip repos where issues are disabled
+          - Be concise in comments — no fluff
+          PROMPT
