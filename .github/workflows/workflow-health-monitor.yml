@@ -20,7 +20,7 @@ jobs:
 
       - name: Check Workflow Health
         run: |
-          cat << 'PROMPT' | claude -p --allowedTools 'Bash(gh *)' --dangerously-skip-permissions --max-budget-usd 1
+          cat << 'PROMPT' | claude -p --allowedTools 'Bash(gh *)' --dangerously-skip-permissions
           You are a workflow health monitor for GitHub user 3amyatin.
 
           ## Task
