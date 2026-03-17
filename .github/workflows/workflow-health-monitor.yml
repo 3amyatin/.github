@@ -12,89 +12,48 @@ jobs:
       contents: read
       issues: write
       id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@latest
 
-      - name: Monitor Workflow Health
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          use_sticky_comment: "false"
-          direct_prompt: |
-            You are a workflow health monitor. Check all 3amyatin GitHub repos for workflow health issues.
+      - name: Check Workflow Health
+        run: |
+          claude --print --allowedTools 'Bash(gh *)' \
+            --oauth-token "$CLAUDE_CODE_OAUTH_TOKEN" \
+            "You are a workflow health monitor for GitHub user 3amyatin.
 
-            ## Instructions
+          ## Task
 
-            1. List all non-archived repos:
-               ```
-               gh repo list 3amyatin --limit 100 --json name,isArchived --jq '.[] | select(.isArchived == false) | .name'
-               ```
+          Check all non-archived repos for workflow health issues and create GitHub issues for problems found.
 
-            2. For each repo, check recent workflow runs from the last 24 hours:
-               ```
-               gh run list --repo 3amyatin/<repo> --limit 10 --json event,status,conclusion,createdAt,name
-               ```
+          ## Steps
 
-            3. Classify each repo as:
-               - HEALTHY: no startup_failure in last 24h, and not ALL recent runs failed
-               - UNHEALTHY: has startup_failure, or all recent runs (3+) failed
-               - NO_WORKFLOWS: no claude.yml workflow file exists
-               - SKIP: no runs in last 24h (nothing to check)
+          1. List all non-archived repos:
+             gh repo list 3amyatin --limit 100 --json name,isArchived --jq '.[] | select(.isArchived == false) | .name'
 
-            4. Analyze unhealthy repos:
-               - If 3+ repos have the SAME failure type (e.g., all startup_failure, or all same error), this is a GENERAL problem
-               - Otherwise, each is a repo-specific problem
+          2. For each repo, check recent workflow runs (last 24h):
+             gh run list --repo 3amyatin/REPO --limit 10 --json event,status,conclusion,createdAt,name
 
-            5. For GENERAL problems:
-               - Create ONE issue in repo 3amyatin/claude with title format: `ci: workflow health — <problem summary>`
-               - Body should list all affected repos and the common error
-               - Before creating, check if an open issue with similar title exists:
-                 ```
-                 gh issue list --repo 3amyatin/claude --state open --search "ci: workflow health"
-                 ```
-               - If a matching open issue exists, add a comment instead of creating a new one
+          3. Classify each repo:
+             - HEALTHY: no startup_failure in last 24h, not all recent runs failed
+             - UNHEALTHY: has startup_failure, or all runs (3+) failed with same error
+             - SKIP: no runs in last 24h
 
-            6. For REPO-SPECIFIC problems:
-               - Create an issue in that specific repo with title: `ci: workflow unhealthy — <failure type>`
-               - Before creating, check if an open issue with similar title exists:
-                 ```
-                 gh issue list --repo 3amyatin/<repo> --state open --search "ci: workflow unhealthy"
-                 ```
-               - If a matching open issue exists, skip (don't duplicate)
+          4. If 3+ repos share the SAME failure type — it is a GENERAL problem:
+             - Check for existing open issue: gh issue list --repo 3amyatin/claude --state open --search 'ci: workflow health'
+             - If exists: add a comment with current status
+             - If not: create issue in 3amyatin/claude titled 'ci: workflow health — PROBLEM_SUMMARY'
+             - Body: list affected repos, common error, suggested fix
 
-            7. If ALL repos are healthy, do nothing. Just output "All workflows healthy" and exit.
+          5. For REPO-SPECIFIC problems:
+             - Check for existing open issue: gh issue list --repo 3amyatin/REPO --state open --search 'ci: workflow unhealthy'
+             - If exists: skip (no duplicate)
+             - If not: create issue titled 'ci: workflow unhealthy — FAILURE_TYPE'
+             - Body: repo name, failure type, recent failed run IDs, suggested action
 
-            ## Issue body template
+          6. If all repos are healthy, just output 'All workflows healthy.' and exit.
 
-            For repo-specific issues:
-            ```
-            ## Workflow Health Alert
-
-            Repository: `3amyatin/<repo>`
-            Failure type: <startup_failure|failure|missing>
-            Detected: <current date/time>
-
-            ### Recent failed runs
-            <list of failed run IDs and their conclusions>
-
-            ### Suggested action
-            <brief suggestion based on failure type>
-            ```
-
-            For general issues:
-            ```
-            ## Workflow Health Alert (General)
-
-            Affected repositories: <count> repos
-            Common failure: <description>
-            Detected: <current date/time>
-
-            ### Affected repos
-            <bulleted list>
-
-            ### Suggested action
-            <brief suggestion>
-            ```
-
-            IMPORTANT: Only use gh CLI commands. Do not modify any files or push any code.
+          IMPORTANT: Only use gh CLI via Bash tool. Do not modify files or push code."
