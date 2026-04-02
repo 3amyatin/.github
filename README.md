@@ -1,12 +1,15 @@
 # .github
 
-Centralized GitHub workflows and configuration for all `3amyatin` repos.
+[![GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/3amyatin/.github)
+[![Claude Code](https://img.shields.io/badge/AI-Claude_Code-F97316?logo=anthropic&logoColor=white)](https://claude.ai)
 
-## What This Does
+Centralized GitHub workflows, configuration, and repo overview for all `3amyatin` repos.
+
+## Centralized Claude Workflows
 
 Provides reusable GitHub Actions workflows so every repo gets automatic Claude-powered code reviews and interactive `@claude` assistance without duplicating workflow files.
 
-## Architecture
+### Architecture
 
 ```
 .github repo (this repo)
@@ -21,7 +24,7 @@ Provides reusable GitHub Actions workflows so every repo gets automatic Claude-p
 
 Each repo receives a thin caller workflow (`.github/workflows/claude.yml`) that delegates to the reusable workflows here. Updates to review logic only need to happen in this repo.
 
-## Features
+### Features
 
 - Automatic code review on every non-draft PR (opened, synchronized, reopened)
   - Inline comments on specific lines with `suggestion` blocks
@@ -31,40 +34,31 @@ Each repo receives a thin caller workflow (`.github/workflows/claude.yml`) that 
 - Issue triage with auto-categorization
 - Issue assignment/labeling triggers
 
-## Setup
+### Setup
 
-### Deploy to all repos
+Deploy to all repos:
 
 ```fish
 ./scripts/deploy-claude.fish
 ```
 
-This sets the `CLAUDE_CODE_OAUTH_TOKEN` secret and pushes the caller workflow to every non-archived, non-fork repo.
-
-### Deploy to specific repos
+Deploy to specific repos:
 
 ```fish
 ./scripts/deploy-claude.fish rules max claude
 ```
 
-### Dry run
+Dry run:
 
 ```fish
 DRY_RUN=1 ./scripts/deploy-claude.fish
 ```
 
-### New repo onboarding
-
-Run the deploy script with the repo name:
-
-```fish
-./scripts/deploy-claude.fish my-new-repo
-```
-
-## Authentication
+### Authentication
 
 Uses `CLAUDE_CODE_OAUTH_TOKEN` (OAuth token from Claude subscription). Set per-repo since personal GitHub accounts don't support account-level secrets. The deploy script handles this automatically.
 
-## Updating Workflows
+### Updating Workflows
 
 Edit the reusable workflows in `.github/workflows/` and push to `main`. All repos inherit changes immediately since they reference `@main`.
+
